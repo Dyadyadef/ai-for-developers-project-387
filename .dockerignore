@@ -1,0 +1,21 @@
+# Артефакты сборки и локальное окружение — не нужны в образе и раздувают context.
+**/bin
+**/obj
+**/node_modules
+**/dist
+**/.vs
+**/.vscode
+**/*.user
+
+.git
+.github
+.claude
+
+# Не нужно для образа: e2e-тесты и сгенерированный вывод TypeSpec.
+e2e
+typespec/tsp-output
+
+# Локальные env-файлы (в образ не попадают; .env.example остаётся в репо).
+**/.env
+**/.env.*
+!**/.env.example

@@ -1,0 +1,13 @@
+# Render Blueprint: один web-сервис из Dockerfile.
+# Render сам прокидывает переменную PORT — приложение слушает её (см. Program.cs).
+services:
+  - type: web
+    name: bookcalls
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: free
+    healthCheckPath: /owner
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
