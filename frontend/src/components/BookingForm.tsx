@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { formatUtcDateTime } from '@/lib/dates'
+import { formatLocalDateTime } from '@/lib/dates'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -32,7 +32,7 @@ export function BookingForm({
       <div>
         <p className="text-sm font-medium">Выбранное время</p>
         <p className="text-sm text-muted-foreground">
-          {selectedStartAt ? formatUtcDateTime(selectedStartAt) : 'Сначала выберите слот'}
+          {selectedStartAt ? formatLocalDateTime(selectedStartAt) : 'Сначала выберите слот'}
         </p>
       </div>
 

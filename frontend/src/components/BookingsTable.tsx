@@ -1,5 +1,5 @@
 import type { Booking } from '@/api/client'
-import { formatUtcDateTime } from '@/lib/dates'
+import { formatLocalDateTime } from '@/lib/dates'
 import {
   Table,
   TableBody,
@@ -22,7 +22,7 @@ export function BookingsTable({ bookings }: BookingsTableProps) {
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead>Дата и время (UTC)</TableHead>
+          <TableHead>Дата и время</TableHead>
           <TableHead>Тип</TableHead>
           <TableHead>Гость</TableHead>
           <TableHead>Email</TableHead>
@@ -31,7 +31,7 @@ export function BookingsTable({ bookings }: BookingsTableProps) {
       <TableBody>
         {bookings.map((booking) => (
           <TableRow key={booking.id}>
-            <TableCell>{formatUtcDateTime(booking.startAt)}</TableCell>
+            <TableCell>{formatLocalDateTime(booking.startAt)}</TableCell>
             <TableCell>{booking.eventTypeTitle}</TableCell>
             <TableCell>{booking.guestName}</TableCell>
             <TableCell>{booking.guestEmail}</TableCell>

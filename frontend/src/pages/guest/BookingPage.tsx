@@ -1,20 +1,22 @@
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { ArrowLeft, CheckCircle2 } from 'lucide-react'
+import { useQueryClient } from '@tanstack/react-query'
 import { ApiError, type Booking } from '@/api/client'
-import { useCreateBooking, useEventType, useSlots } from '@/api/hooks'
+import { useCreateBooking, useEventType, useSlots, queryKeys } from '@/api/hooks'
 import { BookingForm } from '@/components/BookingForm'
 import { SlotPicker } from '@/components/SlotPicker'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import { formatUtcDateTime } from '@/lib/dates'
+import { formatLocalDateTime, getUserTimezone } from '@/lib/dates'
 
 export function BookingPage() {
   const { eventTypeId = '' } = useParams()
   const [selectedStartAt, setSelectedStartAt] = useState<string | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
   const [createdBooking, setCreatedBooking] = useState<Booking | null>(null)
+  const queryClient = useQueryClient()
 
   const eventTypeQuery = useEventType(eventTypeId)
   const slotsQuery = useSlots(eventTypeId)
@@ -37,7 +39,7 @@ export function BookingPage() {
       if (error instanceof ApiError) {
         if (error.status === 409) {
           setFormError('Это время уже занято. Выберите другой слот.')
-          void slotsQuery.refetch()
+          void queryClient.invalidateQueries({ queryKey: queryKeys.slots(eventTypeId), exact: true })
           return
         }
         setFormError(error.details.message)
@@ -84,8 +86,8 @@ export function BookingPage() {
         <div>
           <h1 className="text-2xl font-semibold">Бронирование создано</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            {eventType?.title}: {formatUtcDateTime(createdBooking.startAt)} —{' '}
-            {formatUtcDateTime(createdBooking.endAt)}
+            {eventType?.title}: {formatLocalDateTime(createdBooking.startAt)} —{' '}
+            {formatLocalDateTime(createdBooking.endAt)} ({getUserTimezone()})
           </p>
         </div>
         <Button asChild>
@@ -108,7 +110,7 @@ export function BookingPage() {
           <h1 className="text-2xl font-semibold">{eventType?.title}</h1>
           <p className="mt-1 text-sm text-muted-foreground">{eventType?.description}</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            Окно записи: {slotsQuery.data?.windowStart} — {slotsQuery.data?.windowEnd} (UTC)
+            Окно записи: {slotsQuery.data?.windowStart} — {slotsQuery.data?.windowEnd} ({getUserTimezone()})
           </p>
         </div>
       </div>
@@ -121,7 +123,7 @@ export function BookingPage() {
       ) : (
         <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
           <section className="rounded-lg border bg-card p-4">
-            <h2 className="mb-4 text-sm font-medium">Свободные слоты (UTC)</h2>
+            <h2 className="mb-4 text-sm font-medium">Свободные слоты ({getUserTimezone()})</h2>
             <SlotPicker
               slots={slots}
               selectedStartAt={selectedStartAt}
