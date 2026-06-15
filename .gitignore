@@ -1,3 +1,7 @@
 # Локальный тулинг Claude Code; в репозитории держим только инструкции проекта.
 .claude/*
 !.claude/CLAUDE.md
+
+# Локальные отчёты Lighthouse (генерируются в CI, в репозиторий не коммитим).
+lighthouse-reports/
+issue-body.md
