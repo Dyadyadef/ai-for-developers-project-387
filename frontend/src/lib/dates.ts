@@ -1,3 +1,11 @@
+const plainDateFormatter = new Intl.DateTimeFormat('ru-RU', {
+  weekday: 'short',
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+  timeZone: 'UTC',
+})
+
 const dateFormatter = new Intl.DateTimeFormat('ru-RU', {
   weekday: 'short',
   day: 'numeric',
@@ -20,6 +28,11 @@ const dateTimeFormatter = new Intl.DateTimeFormat('ru-RU', {
 
 export function formatLocalDate(iso: string): string {
   return dateFormatter.format(new Date(iso))
+}
+
+export function formatPlainDate(yyyyMmDd: string): string {
+  const [y, m, d] = yyyyMmDd.split('-').map(Number)
+  return plainDateFormatter.format(new Date(Date.UTC(y, m - 1, d)))
 }
 
 export function formatLocalTime(iso: string): string {

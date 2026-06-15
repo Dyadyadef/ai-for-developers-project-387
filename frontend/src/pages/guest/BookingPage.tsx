@@ -9,7 +9,7 @@ import { SlotPicker } from '@/components/SlotPicker'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import { formatLocalDate, formatLocalDateTime, getUserTimezone } from '@/lib/dates'
+import { formatPlainDate, formatLocalDateTime, getUserTimezone } from '@/lib/dates'
 
 export function BookingPage() {
   const { eventTypeId = '' } = useParams()
@@ -109,9 +109,11 @@ export function BookingPage() {
         <div>
           <h1 className="text-2xl font-semibold">{eventType?.title}</h1>
           <p className="mt-1 text-sm text-muted-foreground">{eventType?.description}</p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Окно записи: {formatLocalDate(slotsQuery.data?.windowStart ?? '')} — {formatLocalDate(slotsQuery.data?.windowEnd ?? '')}
-          </p>
+          {slotsQuery.data?.windowStart && slotsQuery.data?.windowEnd && (
+            <p className="mt-1 text-xs text-muted-foreground">
+              Окно записи: {formatPlainDate(slotsQuery.data.windowStart)} — {formatPlainDate(slotsQuery.data.windowEnd)}
+            </p>
+          )}
         </div>
       </div>
 
