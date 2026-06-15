@@ -4,7 +4,7 @@ import { bookViaApi, fetchSlots, uniqueGuest } from './helpers'
 // Сид-данные backend: тип события всегда присутствует после старта.
 const EVENT_TYPE_ID = 'consultation-30'
 
-/** Кнопки слотов внутри секции «Свободные слоты (UTC)», в порядке возрастания времени. */
+/** Кнопки слотов внутри секции «Свободные слоты», в порядке возрастания времени. */
 function slotButtons(page: Page): Locator {
   return page.locator('section', { hasText: 'Свободные слоты' }).getByRole('button')
 }
