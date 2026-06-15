@@ -1,0 +1,104 @@
+name: Lighthouse
+
+on:
+  # Ночной запуск: 01:00 UTC = 04:00 МСК. Отчёт готов к утру команды.
+  schedule:
+    - cron: '0 1 * * *'
+  # Ручной запуск из вкладки Actions (с возможностью переопределить цель).
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: 'Базовый URL для аудита'
+        required: false
+        default: 'https://bookcalls.onrender.com'
+      paths:
+        description: 'Пути через запятую'
+        required: false
+        default: '/,/book/consultation-30'
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  lighthouse:
+    runs-on: ubuntu-latest
+    env:
+      BASE_URL: ${{ github.event.inputs.base_url || 'https://bookcalls.onrender.com' }}
+      PATHS: ${{ github.event.inputs.paths || '/,/book/consultation-30' }}
+      LH_THRESHOLD: '90'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup Chrome
+        id: chrome
+        uses: browser-actions/setup-chrome@v1
+
+      - name: Install Lighthouse CLI
+        run: npm install -g lighthouse@12
+
+      - name: Warm up target (Render free dyno may be asleep)
+        run: |
+          echo "Прогреваю $BASE_URL ..."
+          for i in $(seq 1 24); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "$BASE_URL/" || echo 000)
+            echo "attempt $i: HTTP $code"
+            if [ "$code" = "200" ]; then echo "Сервис проснулся."; break; fi
+            sleep 5
+          done
+
+      - name: Run Lighthouse
+        env:
+          CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
+        run: |
+          mkdir -p lighthouse-reports
+          IFS=',' read -ra ITEMS <<< "$PATHS"
+          for p in "${ITEMS[@]}"; do
+            p_trimmed=$(echo "$p" | xargs)
+            slug=$(echo "$p_trimmed" | sed -e 's#^/##' -e 's#[^a-zA-Z0-9]#_#g')
+            [ -z "$slug" ] && slug="home"
+            url="${BASE_URL}${p_trimmed}"
+            echo "::group::Lighthouse $url"
+            lighthouse "$url" \
+              --output=html,json \
+              --output-path="./lighthouse-reports/${slug}" \
+              --only-categories=performance,accessibility,best-practices,seo \
+              --chrome-flags="--headless=new --no-sandbox --disable-gpu" \
+              --quiet || echo "Lighthouse завершился с ошибкой для $url (продолжаю)"
+            echo "::endgroup::"
+          done
+          ls -la lighthouse-reports || true
+
+      - name: Build report summary
+        id: report
+        run: node .github/scripts/lighthouse-report.mjs
+
+      - name: Upload report artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-reports
+          path: lighthouse-reports/
+          retention-days: 30
+
+      - name: Publish morning issue
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          [ -f issue-body.md ] || echo "Отчёт Lighthouse не сформирован — см. логи job." > issue-body.md
+          gh label create lighthouse -c FFA500 -d "Ночной аудит Lighthouse" 2>/dev/null || true
+          # Закрываем прошлые открытые отчёты, чтобы держать один актуальный.
+          for n in $(gh issue list --label lighthouse --state open --json number --jq '.[].number'); do
+            gh issue close "$n" -c "Заменён свежим ночным отчётом." || true
+          done
+          gh issue create \
+            --title "Lighthouse — $(date -u +%F)" \
+            --label lighthouse \
+            --body-file issue-body.md
